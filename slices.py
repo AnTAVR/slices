@@ -40,8 +40,8 @@ if __name__ == '__main__':
     print(z)
 
     for mask in get_slice_masks(z.shape, NDIM):
-        print(mask)
+        print('mask =', mask)
         for sl in gen_slices(mask):
-            print(sl)
+            print('z[', sl, ']', sep='')
             r = z[sl]  # type: np.ndarray
             print(r)
