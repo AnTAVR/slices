@@ -1,4 +1,4 @@
-import itertools
+from itertools import combinations
 from typing import Tuple, Union, Any, Generator
 
 Mask = Tuple[Union[range, slice], ...]
@@ -8,7 +8,7 @@ Slice = Tuple[Union[int, slice], ...]
 def get_slice_masks(shape: Tuple[int, ...], ndim: int) -> Generator[Mask, Any, None]:
     _ndim = len(shape)
     # assert 0 <= ndim <= _ndim
-    for _comb in itertools.combinations(range(_ndim - 1, -1, -1), ndim):  # type: Tuple[int, ...]
+    for _comb in combinations(range(_ndim - 1, -1, -1), ndim):  # type: Tuple[int, ...]
         yield tuple(slice(shape[n]) if n in _comb else range(shape[n]) for n in range(_ndim))
 
 
