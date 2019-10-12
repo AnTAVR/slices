@@ -1,9 +1,5 @@
-import functools
 import itertools
-import operator
 from typing import Tuple, Union, Any, Generator
-
-import numpy as np
 
 Mask = Tuple[Union[range, slice], ...]
 Slice = Tuple[Union[int, slice], ...]
@@ -33,6 +29,10 @@ def gen_slices(slice_mask: Mask, tmp_slice: Slice = tuple(), ndim: int = 0) -> G
 
 
 if __name__ == '__main__':
+    import functools
+    import operator
+    import numpy as np
+
     SHAPE = (3, 2, 4)
     NDIM = 2
 
