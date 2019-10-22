@@ -7,15 +7,15 @@ SliceVal = Union[int, slice]
 Slice = Tuple[SliceVal, ...]
 
 
-def slice_masks(shape: Tuple[int, ...], ndim: int) -> Generator[Mask, Any, None]:
+def slice_masks(shape: Tuple[int, ...], r: int) -> Generator[Mask, Any, None]:
     _len = len(shape)
-    # assert 0 <= ndim <= _len, (ndim, _len)
-    for comb_dims in combinations(range(_len - 1, -1, -1), ndim):  # type: Tuple[int, ...]
+    # assert 0 <= r <= _len, (r, _len)
+    for comb_dims in combinations(range(_len - 1, -1, -1), r):  # type: Tuple[int, ...]
         yield tuple(slice(shape[dim]) if dim in comb_dims else range(shape[dim]) for dim in range(_len))
 
 
-def mask_to_slices(slice_mask: Mask) -> Generator[Slice, Any, None]:
-    _len = len(slice_mask)
+def mask_to_slices(mask: Mask) -> Generator[Slice, Any, None]:
+    _len = len(mask)
 
     def _mts(_slice: Slice, dim: int):
         # assert 0 <= dim <= _len, (dim, _len)
@@ -23,7 +23,7 @@ def mask_to_slices(slice_mask: Mask) -> Generator[Slice, Any, None]:
             yield _slice
             return
 
-        value = slice_mask[dim]  # type: MaskVal
+        value = mask[dim]  # type: MaskVal
         dim += 1
 
         if isinstance(value, slice):
@@ -47,9 +47,9 @@ if __name__ == '__main__':
     z = np.arange(functools.reduce(operator.mul, SHAPE)).reshape(SHAPE)  # type: np.ndarray
     print(z)
 
-    for mask in slice_masks(z.shape, NDIM):
-        print('mask =', mask)
-        for sl in mask_to_slices(mask):
+    for msk in slice_masks(z.shape, NDIM):
+        print('mask =', msk)
+        for sl in mask_to_slices(msk):
             print('z[', sl, ']', sep='')
             r = z[sl]  # type: np.ndarray
             print(r)
