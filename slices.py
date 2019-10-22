@@ -14,25 +14,24 @@ def get_slice_masks(shape: Tuple[int, ...], ndim: int) -> Generator[Mask, Any, N
         yield tuple(slice(shape[_n]) if _n in _comb else range(shape[_n]) for _n in range(_len))
 
 
-def gen_slices(slice_mask: Mask, prev_slice: Slice = tuple(), ndim: int = 0) -> Generator[Slice, Any, None]:
+def gen_slices(slice_mask: Mask, pre_slice: Slice = tuple(), ndim: int = 0) -> Generator[Slice, Any, None]:
     _len = len(slice_mask)
     # assert 0 <= ndim <= _len, (ndim, _len)
     if ndim == _len:
-        _slice = prev_slice  # type: Slice
-        yield _slice
+        yield pre_slice
         return
 
     _ndim = ndim + 1
     _mask_val = slice_mask[ndim]  # type: MaskVal
 
     if isinstance(_mask_val, slice):
-        _slice = prev_slice + (_mask_val,)  # type: Slice
-        yield from gen_slices(slice_mask, _slice, _ndim)
+        _slice = (_mask_val,)  # type: Slice
+        yield from gen_slices(slice_mask, pre_slice + _slice, _ndim)
         return
 
     for _n in _mask_val:
-        _slice = prev_slice + (_n,)  # type: Slice
-        yield from gen_slices(slice_mask, _slice, _ndim)
+        _slice = (_n,)  # type: Slice
+        yield from gen_slices(slice_mask, pre_slice + _slice, _ndim)
 
 
 if __name__ == '__main__':
