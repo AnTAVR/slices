@@ -1,33 +1,38 @@
 from itertools import combinations
 from typing import Tuple, Union, Any, Generator
 
-Mask = Tuple[Union[range, slice], ...]
-Slice = Tuple[Union[int, slice], ...]
+MaskVal = Union[range, slice]
+Mask = Tuple[MaskVal, ...]
+SliceVal = Union[int, slice]
+Slice = Tuple[SliceVal, ...]
 
 
 def get_slice_masks(shape: Tuple[int, ...], ndim: int) -> Generator[Mask, Any, None]:
-    _ndim = len(shape)
-    # assert 0 <= ndim <= _ndim
-    for _comb in combinations(range(_ndim - 1, -1, -1), ndim):  # type: Tuple[int, ...]
-        yield tuple(slice(shape[n]) if n in _comb else range(shape[n]) for n in range(_ndim))
+    _len = len(shape)
+    # assert 0 <= ndim <= _len, (ndim, _len)
+    for _comb in combinations(range(_len - 1, -1, -1), ndim):  # type: Tuple[int, ...]
+        yield tuple(slice(shape[_n]) if _n in _comb else range(shape[_n]) for _n in range(_len))
 
 
-def gen_slices(slice_mask: Mask, prev_slice: Slice = tuple(), dim: int = 0) -> Generator[Slice, Any, None]:
-    _ndim = len(slice_mask)
-    # assert 0 <= dim <= _ndim + 1
-    if dim >= _ndim:
-        yield prev_slice
+def gen_slices(slice_mask: Mask, prev_slice: Slice = tuple(), ndim: int = 0) -> Generator[Slice, Any, None]:
+    _len = len(slice_mask)
+    # assert 0 <= ndim <= _len, (ndim, _len)
+    if ndim == _len:
+        _slice = prev_slice  # type: Slice
+        yield _slice
         return
 
-    _range = slice_mask[dim]  # type: Union[range, slice]
-    next_dim = dim + 1
+    _ndim = ndim + 1
+    _mask_val = slice_mask[ndim]  # type: MaskVal
 
-    if isinstance(_range, slice):
-        yield from gen_slices(slice_mask, prev_slice + (_range,), next_dim)
+    if isinstance(_mask_val, slice):
+        _slice = prev_slice + (_mask_val,)  # type: Slice
+        yield from gen_slices(slice_mask, _slice, _ndim)
         return
 
-    for _i in _range:
-        yield from gen_slices(slice_mask, prev_slice + (_i,), next_dim)
+    for _n in _mask_val:
+        _slice = prev_slice + (_n,)  # type: Slice
+        yield from gen_slices(slice_mask, _slice, _ndim)
 
 
 if __name__ == '__main__':
@@ -35,7 +40,7 @@ if __name__ == '__main__':
     import operator
     import numpy as np
 
-    SHAPE = (3, 2, 4)
+    SHAPE = (3, 4, 5)
     NDIM = 2
 
     z = np.arange(functools.reduce(operator.mul, SHAPE)).reshape(SHAPE)  # type: np.ndarray
