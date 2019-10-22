@@ -7,31 +7,33 @@ SliceVal = Union[int, slice]
 Slice = Tuple[SliceVal, ...]
 
 
-def get_slice_masks(shape: Tuple[int, ...], ndim: int) -> Generator[Mask, Any, None]:
+def slice_masks(shape: Tuple[int, ...], ndim: int) -> Generator[Mask, Any, None]:
     _len = len(shape)
     # assert 0 <= ndim <= _len, (ndim, _len)
-    for _comb in combinations(range(_len - 1, -1, -1), ndim):  # type: Tuple[int, ...]
-        yield tuple(slice(shape[_n]) if _n in _comb else range(shape[_n]) for _n in range(_len))
+    for comb_dims in combinations(range(_len - 1, -1, -1), ndim):  # type: Tuple[int, ...]
+        yield tuple(slice(shape[dim]) if dim in comb_dims else range(shape[dim]) for dim in range(_len))
 
 
-def gen_slices(slice_mask: Mask, pre_slice: Slice = tuple(), ndim: int = 0) -> Generator[Slice, Any, None]:
+def mask_to_slices(slice_mask: Mask) -> Generator[Slice, Any, None]:
     _len = len(slice_mask)
-    # assert 0 <= ndim <= _len, (ndim, _len)
-    if ndim == _len:
-        yield pre_slice
-        return
 
-    _ndim = ndim + 1
-    _mask_val = slice_mask[ndim]  # type: MaskVal
+    def _mts(_slice: Slice, dim: int):
+        # assert 0 <= dim <= _len, (dim, _len)
+        if dim == _len:
+            yield _slice
+            return
 
-    if isinstance(_mask_val, slice):
-        _slice = (_mask_val,)  # type: Slice
-        yield from gen_slices(slice_mask, pre_slice + _slice, _ndim)
-        return
+        value = slice_mask[dim]  # type: MaskVal
+        dim += 1
 
-    for _n in _mask_val:
-        _slice = (_n,)  # type: Slice
-        yield from gen_slices(slice_mask, pre_slice + _slice, _ndim)
+        if isinstance(value, slice):
+            yield from _mts(_slice + (value,), dim)
+            return
+
+        for n in value:
+            yield from _mts(_slice + (n,), dim)
+
+    return _mts(tuple(), 0)
 
 
 if __name__ == '__main__':
@@ -45,9 +47,9 @@ if __name__ == '__main__':
     z = np.arange(functools.reduce(operator.mul, SHAPE)).reshape(SHAPE)  # type: np.ndarray
     print(z)
 
-    for mask in get_slice_masks(z.shape, NDIM):
+    for mask in slice_masks(z.shape, NDIM):
         print('mask =', mask)
-        for sl in gen_slices(mask):
+        for sl in mask_to_slices(mask):
             print('z[', sl, ']', sep='')
             r = z[sl]  # type: np.ndarray
             print(r)
