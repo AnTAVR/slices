@@ -51,5 +51,5 @@ if __name__ == '__main__':
         print('mask =', msk)
         for sl in mask_to_slices(msk):
             print('z[', sl, ']', sep='')
-            r = z[sl]  # type: np.ndarray
-            print(r)
+            arr = z[sl]  # type: np.ndarray
+            print(arr)
