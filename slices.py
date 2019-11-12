@@ -66,9 +66,6 @@ def view_as_windows(arr_in: np.ndarray, win_shape: Union[int, Tuple[int, ...]], 
 
 
 if __name__ == '__main__':
-    import functools
-    import operator
-
     VARS = {}
 
     PRINT_ARR = '{arr}, ndim = {arr.ndim}'
@@ -78,7 +75,7 @@ if __name__ == '__main__':
 
     print('new array')
     print(VARS)
-    arr: np.ndarray = np.arange(functools.reduce(operator.mul, VARS['SHAPE'])).reshape(VARS['SHAPE'])
+    arr: np.ndarray = np.arange(np.array(VARS['SHAPE']).prod()).reshape(VARS['SHAPE'])
     print(PRINT_ARR.format(arr=arr))
 
     print('array_prepare')
@@ -91,7 +88,7 @@ if __name__ == '__main__':
     print('new array')
     print(VARS)
 
-    arr: np.ndarray = np.arange(functools.reduce(operator.mul, VARS['SHAPE'])).reshape(VARS['SHAPE'])
+    arr: np.ndarray = np.arange(np.array(VARS['SHAPE']).prod()).reshape(VARS['SHAPE'])
     print(PRINT_ARR.format(arr=arr))
 
     save_arr = arr
