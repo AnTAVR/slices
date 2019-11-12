@@ -54,12 +54,12 @@ def view_as_windows(arr_in: np.ndarray,
     if isinstance(win_shape, int):
         win_shape = (win_shape,) * ndim
     # _len = len(win_shape)
-    # assert _len == ndim, (ndim, _len)
+    # assert _len == ndim, (ndim, _len, win_shape)
 
     if isinstance(step, int):
         step = (step,) * ndim
     # _len = len(step)
-    # assert _len == ndim, (ndim, _len)
+    # assert _len == ndim, (ndim, _len, step)
 
     indices_shape: np.ndarray = ((np.array(arr_in.shape) - np.array(win_shape)) // np.array(step)) + 1
 
@@ -71,35 +71,21 @@ def view_as_windows(arr_in: np.ndarray,
 
 
 if __name__ == '__main__':
-    VARS = {}
-
     PRINT_ARR = '{arr}, ndim = {arr.ndim}'
 
-    VARS['NDIM'] = 2
-    VARS['SHAPE'] = (3, 4, 5)
+    VARS = {'NDIM': 2, 'SHAPE': (7,) * 2, 'W_SHAPE': 3}
 
     print('new array')
     print(VARS)
-    arr: np.ndarray = np.arange(np.array(VARS['SHAPE']).prod()).reshape(VARS['SHAPE'])
+    arr = save_arr = np.arange(np.array(VARS['SHAPE']).prod()).reshape(VARS['SHAPE'])  # type: np.ndarray
     print(PRINT_ARR.format(arr=arr))
 
     print('array_prepare')
     print(VARS)
-    for arr in array_prepare(arr, VARS['NDIM']):
+    for arr in array_prepare(save_arr, VARS['NDIM']):
         print(PRINT_ARR.format(arr=arr))
 
-    VARS['SHAPE'] = (5,) * 3
-
-    print('new array')
-    print(VARS)
-
-    arr: np.ndarray = np.arange(np.array(VARS['SHAPE']).prod()).reshape(VARS['SHAPE'])
-    print(PRINT_ARR.format(arr=arr))
-
-    save_arr = arr
-
     print('view_as_windows')
-    VARS['W_SHAPE'] = (2,) * len(VARS['SHAPE'])
     print(VARS)
     arr = view_as_windows(save_arr, VARS['W_SHAPE'])
     print(PRINT_ARR.format(arr=arr))
