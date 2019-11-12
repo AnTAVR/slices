@@ -15,36 +15,40 @@ def mask_combinations(shape: Tuple[int, ...], r: int) -> Iterator[Mask]:
     _len = len(shape)
     # assert 0 <= r <= _len, (r, _len)
     for comb_dims in combinations(range(_len - 1, -1, -1), r):  # type: Tuple[int, ...]
-        yield tuple(slice(shape[dim]) if dim in comb_dims else range(shape[dim]) for dim in range(_len))
+        yield tuple(slice(val) if dim in comb_dims else range(val) for dim, val in enumerate(shape))
 
 
 def mask_to_slices(mask: Mask) -> Iterator[Slice]:
     _len = len(mask)
 
-    def _mts(_slice: Slice, dim: int) -> Iterator[Slice]:
+    def _mts(new_slice: Slice, dim: int) -> Iterator[Slice]:
         # assert 0 <= dim <= _len, (dim, _len)
         if dim == _len:
-            yield _slice
+            yield new_slice
             return
 
         value = mask[dim]  # type: MaskVal
         dim += 1
 
         if isinstance(value, slice):
-            yield from _mts(_slice + (value,), dim)
+            sl = new_slice + (value,)
+            yield from _mts(sl, dim)
             return
 
-        for n in value:
-            yield from _mts(_slice + (n,), dim)
+        for val in value:
+            sl = new_slice + (val,)
+            yield from _mts(sl, dim)
 
     return _mts(tuple(), 0)
 
 
-def array_prepare(arr_in: np.ndarray, ndim: int) -> Iterator[np.ndarray]:
-    return (arr_in[sl] for msk in mask_combinations(arr_in.shape, ndim) for sl in mask_to_slices(msk))
+def array_prepare(arr_in: np.ndarray, r: int) -> Iterator[np.ndarray]:
+    return (arr_in[sl] for msk in mask_combinations(arr_in.shape, r) for sl in mask_to_slices(msk))
 
 
-def view_as_windows(arr_in: np.ndarray, win_shape: Union[int, Tuple[int, ...]], step: Union[int, Tuple[int, ...]] = 1) -> np.ndarray:
+def view_as_windows(arr_in: np.ndarray,
+                    win_shape: Union[int, Tuple[int, ...]],
+                    step: Union[int, Tuple[int, ...]] = 1) -> np.ndarray:
     ndim: int = arr_in.ndim
 
     if isinstance(win_shape, int):
@@ -57,12 +61,13 @@ def view_as_windows(arr_in: np.ndarray, win_shape: Union[int, Tuple[int, ...]], 
     # _len = len(step)
     # assert _len == ndim, (ndim, _len)
 
-    shape: np.ndarray = ((np.array(arr_in.shape) - np.array(win_shape)) // np.array(step)) + 1
-    out_shape: Tuple[int, ...] = (shape.prod(),) + win_shape
-    shape: Tuple[int, ...] = tuple(shape) + win_shape
-    strides: Tuple[int, ...] = arr_in[tuple(slice(None, None, s) for s in step)].strides + arr_in.strides
+    indices_shape: np.ndarray = ((np.array(arr_in.shape) - np.array(win_shape)) // np.array(step)) + 1
 
-    return np.lib.stride_tricks.as_strided(arr_in, shape=shape, strides=strides).reshape(out_shape)
+    shape: Tuple[int, ...] = tuple(indices_shape) + win_shape
+    strides: Tuple[int, ...] = arr_in[tuple(slice(None, None, s) for s in step)].strides + arr_in.strides
+    out_shape: Tuple[int, ...] = (indices_shape.prod(),) + win_shape
+
+    return np.lib.stride_tricks.as_strided(arr_in, shape, strides).reshape(out_shape)
 
 
 if __name__ == '__main__':
