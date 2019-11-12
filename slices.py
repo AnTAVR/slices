@@ -3,7 +3,7 @@ from typing import Tuple, Union, Iterator
 
 import numpy as np
 
-__all__ = ['MaskVal', 'Mask', 'SliceVal', 'Slice', 'mask_combinations', 'mask_to_slices', 'view_as_windows']
+__all__ = ['MaskVal', 'Mask', 'SliceVal', 'Slice', 'mask_combinations', 'mask_to_slices', 'array_prepare', 'view_as_windows']
 
 MaskVal = Union[range, slice]
 Mask = Tuple[MaskVal, ...]
@@ -40,12 +40,16 @@ def mask_to_slices(mask: Mask) -> Iterator[Slice]:
     return _mts(tuple(), 0)
 
 
-def view_as_windows(arr_in: np.ndarray, shape: Union[int, Tuple[int, ...]], step: Union[int, Tuple[int, ...]] = 1) -> np.ndarray:
+def array_prepare(arr_in: np.ndarray, ndim: int) -> Iterator[np.ndarray]:
+    return (arr_in[sl] for msk in mask_combinations(arr_in.shape, ndim) for sl in mask_to_slices(msk))
+
+
+def view_as_windows(arr_in: np.ndarray, win_shape: Union[int, Tuple[int, ...]], step: Union[int, Tuple[int, ...]] = 1) -> np.ndarray:
     ndim: int = arr_in.ndim
 
-    if isinstance(shape, int):
-        shape = (shape,) * ndim
-    # _len = len(shape)
+    if isinstance(win_shape, int):
+        win_shape = (win_shape,) * ndim
+    # _len = len(win_shape)
     # assert _len == ndim, (ndim, _len)
 
     if isinstance(step, int):
@@ -53,44 +57,52 @@ def view_as_windows(arr_in: np.ndarray, shape: Union[int, Tuple[int, ...]], step
     # _len = len(step)
     # assert _len == ndim, (ndim, _len)
 
-    indices_shape: np.ndarray = ((np.array(arr_in.shape) - np.array(shape)) // np.array(step)) + 1
-    new_shape = tuple(indices_shape) + shape
+    shape: np.ndarray = ((np.array(arr_in.shape) - np.array(win_shape)) // np.array(step)) + 1
+    out_shape: Tuple[int, ...] = (shape.prod(),) + win_shape
+    shape: Tuple[int, ...] = tuple(shape) + win_shape
+    strides: Tuple[int, ...] = arr_in[tuple(slice(None, None, s) for s in step)].strides + arr_in.strides
 
-    slices: Slice = tuple(slice(None, None, st) for st in step)
-    new_strides: Tuple[int, ...] = arr_in[slices].strides + arr_in.strides
-
-    arr_out = np.lib.stride_tricks.as_strided(arr_in, shape=new_shape, strides=new_strides)
-    return arr_out
+    return np.lib.stride_tricks.as_strided(arr_in, shape=shape, strides=strides).reshape(out_shape)
 
 
 if __name__ == '__main__':
     import functools
     import operator
 
-    SHAPE = (3, 4, 5)
-    NDIM = 2
+    VARS = {}
 
-    arr: np.ndarray = np.arange(functools.reduce(operator.mul, SHAPE)).reshape(SHAPE)
-    print(arr, end='\n\n')
+    PRINT_ARR = '{arr}, ndim = {arr.ndim}'
 
-    print('mask_combinations')
-    for msk in mask_combinations(arr.shape, NDIM):
-        print('mask =', msk)
-        for sl in mask_to_slices(msk):
-            print('z[', sl, ']', sep='')
-            out_arr: np.ndarray = arr[sl]
-            print(out_arr, end='\n\n')
+    VARS['NDIM'] = 2
+    VARS['SHAPE'] = (3, 4, 5)
 
-    SHAPE = (4, 5)
-    W_SHAPE = (2, 2)
+    print('new array')
+    print(VARS)
+    arr: np.ndarray = np.arange(functools.reduce(operator.mul, VARS['SHAPE'])).reshape(VARS['SHAPE'])
+    print(PRINT_ARR.format(arr=arr))
 
-    arr = np.arange(functools.reduce(operator.mul, SHAPE)).reshape(SHAPE)  # type: np.ndarray
-    print(arr, end='\n\n')
+    print('array_prepare')
+    print(VARS)
+    for arr in array_prepare(arr, VARS['NDIM']):
+        print(PRINT_ARR.format(arr=arr))
+
+    VARS['SHAPE'] = (5,) * 3
+
+    print('new array')
+    print(VARS)
+
+    arr: np.ndarray = np.arange(functools.reduce(operator.mul, VARS['SHAPE'])).reshape(VARS['SHAPE'])
+    print(PRINT_ARR.format(arr=arr))
+
+    save_arr = arr
 
     print('view_as_windows')
-    for out_arr in view_as_windows(arr, W_SHAPE):
-        print(out_arr, end='\n\n')
+    VARS['W_SHAPE'] = (2,) * len(VARS['SHAPE'])
+    print(VARS)
+    arr = view_as_windows(save_arr, VARS['W_SHAPE'])
+    print(PRINT_ARR.format(arr=arr))
 
     print('view_as_blocks')
-    for out_arr in view_as_windows(arr, W_SHAPE, W_SHAPE):
-        print(out_arr, end='\n\n')
+    print(VARS)
+    arr = view_as_windows(save_arr, VARS['W_SHAPE'], VARS['W_SHAPE'])
+    print(PRINT_ARR.format(arr=arr))
