@@ -73,24 +73,25 @@ def view_as_windows(arr_in: np.ndarray,
 if __name__ == '__main__':
     PRINT_ARR = '{arr}, ndim = {arr.ndim}'
 
-    VARS = {'NDIM': 2, 'SHAPE': (7,) * 2, 'W_SHAPE': 3}
+    VARS = {'SHAPE': (5,) * 3, 'NDIM': 2, 'W_SHAPE': 3}
+    save_arr: np.ndarray = np.arange(np.array(VARS['SHAPE']).prod()).reshape(VARS['SHAPE'])
 
-    print('new array')
-    print(VARS)
-    arr = save_arr = np.arange(np.array(VARS['SHAPE']).prod()).reshape(VARS['SHAPE'])  # type: np.ndarray
-    print(PRINT_ARR.format(arr=arr))
-
-    print('array_prepare')
-    print(VARS)
-    for arr in array_prepare(save_arr, VARS['NDIM']):
+    print('new array', VARS)
+    for x, arr in enumerate(save_arr):
+        print(x)
         print(PRINT_ARR.format(arr=arr))
 
-    print('view_as_windows')
-    print(VARS)
-    arr = view_as_windows(save_arr, VARS['W_SHAPE'])
-    print(PRINT_ARR.format(arr=arr))
+    print('array_prepare', VARS)
+    for x, arr in enumerate(array_prepare(save_arr, VARS['NDIM'])):
+        print(x)
+        print(PRINT_ARR.format(arr=arr))
 
-    print('view_as_blocks')
-    print(VARS)
-    arr = view_as_windows(save_arr, VARS['W_SHAPE'], VARS['W_SHAPE'])
-    print(PRINT_ARR.format(arr=arr))
+    print('view_as_windows', VARS)
+    for x, arr in enumerate(view_as_windows(save_arr, VARS['W_SHAPE'])):
+        print(x)
+        print(PRINT_ARR.format(arr=arr))
+
+    print('view_as_blocks', VARS)
+    for x, arr in enumerate(view_as_windows(save_arr, VARS['W_SHAPE'], VARS['W_SHAPE'])):
+        print(x)
+        print(PRINT_ARR.format(arr=arr))
