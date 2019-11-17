@@ -1,5 +1,6 @@
-from itertools import combinations
-from typing import Tuple, Union, Iterator
+from itertools import combinations, product
+from math import ceil
+from typing import Tuple, Union, Iterator, Optional
 
 import numpy as np
 
@@ -70,16 +71,36 @@ def view_as_windows(arr_in: np.ndarray,
     return np.lib.stride_tricks.as_strided(arr_in, shape, strides).reshape(out_shape)
 
 
+def array_ext(arr_in: np.ndarray, len_line: int) -> Optional[np.ndarray]:
+    r = 2
+    cl: int = ceil(len_line / r)
+
+    ret = None
+    row = None
+    i = 0
+    for s in product((slice(-cl, None), slice(None, None), slice(None, cl)), repeat=r):  # type: Tuple[slice, ...]
+        val: np.ndarray = arr_in[s]
+        if i <= r:
+            row = val if row is None else np.hstack((row, val))
+            i += 1
+        else:
+            ret = row if ret is None else np.vstack((ret, row))
+            i, row = 1, val
+    else:
+        if ret is not None:
+            ret = np.vstack((ret, row))
+    return ret
+
+
 if __name__ == '__main__':
     PRINT_ARR = '{arr}, ndim = {arr.ndim}'
 
-    VARS = {'SHAPE': (5,) * 3, 'NDIM': 2, 'W_SHAPE': 3}
+    VARS = {'SHAPE': (5,) * 2, 'NDIM': 2, 'W_SHAPE': 3}
     save_arr: np.ndarray = np.arange(np.array(VARS['SHAPE']).prod()).reshape(VARS['SHAPE'])
 
     print('new array', VARS)
-    for x, arr in enumerate(save_arr):
-        print(x)
-        print(PRINT_ARR.format(arr=arr))
+    arr = save_arr
+    print(PRINT_ARR.format(arr=arr))
 
     print('array_prepare', VARS)
     for x, arr in enumerate(array_prepare(save_arr, VARS['NDIM'])):
@@ -87,11 +108,13 @@ if __name__ == '__main__':
         print(PRINT_ARR.format(arr=arr))
 
     print('view_as_windows', VARS)
-    for x, arr in enumerate(view_as_windows(save_arr, VARS['W_SHAPE'])):
-        print(x)
-        print(PRINT_ARR.format(arr=arr))
+    arr = view_as_windows(save_arr, VARS['W_SHAPE'])
+    print(PRINT_ARR.format(arr=arr))
 
     print('view_as_blocks', VARS)
-    for x, arr in enumerate(view_as_windows(save_arr, VARS['W_SHAPE'], VARS['W_SHAPE'])):
-        print(x)
-        print(PRINT_ARR.format(arr=arr))
+    arr = view_as_windows(save_arr, VARS['W_SHAPE'], VARS['W_SHAPE'])
+    print(PRINT_ARR.format(arr=arr))
+
+    print('dd', VARS)
+    arr = array_ext(save_arr, VARS['W_SHAPE'])
+    print(PRINT_ARR.format(arr=arr))
