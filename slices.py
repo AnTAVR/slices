@@ -115,6 +115,6 @@ if __name__ == '__main__':
     arr = view_as_windows(save_arr, VARS['W_SHAPE'], VARS['W_SHAPE'])
     print(PRINT_ARR.format(arr=arr))
 
-    print('dd', VARS)
+    print('array_ext', VARS)
     arr = array_ext(save_arr, VARS['W_SHAPE'])
     print(PRINT_ARR.format(arr=arr))
