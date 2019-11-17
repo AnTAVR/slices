@@ -12,10 +12,10 @@ SliceVal = Union[int, slice]
 Slice = Tuple[SliceVal, ...]
 
 
-def mask_combinations(shape: Tuple[int, ...], r: int) -> Iterator[Mask]:
+def mask_combinations(shape: Tuple[int, ...], ndim: int) -> Iterator[Mask]:
     _len = len(shape)
-    # assert 0 <= r <= _len, (r, _len)
-    for comb_dims in combinations(range(_len - 1, -1, -1), r):  # type: Tuple[int, ...]
+    # assert 0 <= ndim <= _len, (ndim, _len)
+    for comb_dims in combinations(range(_len - 1, -1, -1), ndim):  # type: Tuple[int, ...]
         yield tuple(slice(val) if dim in comb_dims else range(val) for dim, val in enumerate(shape))
 
 
@@ -43,8 +43,8 @@ def mask_to_slices(mask: Mask) -> Iterator[Slice]:
     return _mts(tuple(), 0)
 
 
-def array_prepare(arr_in: np.ndarray, r: int) -> Iterator[np.ndarray]:
-    return (arr_in[sl] for msk in mask_combinations(arr_in.shape, r) for sl in mask_to_slices(msk))
+def array_prepare(arr_in: np.ndarray, ndim: int) -> Iterator[np.ndarray]:
+    return (arr_in[sl] for msk in mask_combinations(arr_in.shape, ndim) for sl in mask_to_slices(msk))
 
 
 def view_as_windows(arr_in: np.ndarray,
